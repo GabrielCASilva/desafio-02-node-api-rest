@@ -4,7 +4,15 @@ import { z } from 'zod'
 import { randomUUID } from 'node:crypto'
 
 export async function loginRoutes(app: FastifyInstance) {
+  app.addHook('preHandler', async (request) => {
+    console.log(`[${request.method}] ${request.url}`)
+  })
+
   app.post('/', async (request, reply) => {
+    if (request.cookies.session_id) {
+      return reply.status(401).send('Usuário já se encontra logado')
+    }
+
     const createLoginBodySchema = z.object({
       email: z.string(),
       password: z.string(),
@@ -35,5 +43,23 @@ export async function loginRoutes(app: FastifyInstance) {
       .where({ id: user.id })
 
     return reply.status(200).send('Login realizado com sucesso!')
+  })
+
+  app.delete('/', async (request, reply) => {
+    const sessionId = request.cookies.session_id
+
+    if (!sessionId) {
+      return reply.status(401).send('Nenhum usuário logado')
+    }
+
+    await knex('users')
+      .update({
+        session_id: '',
+      })
+      .where({ session_id: sessionId })
+
+    reply.clearCookie('session_id', { path: '/' })
+
+    return reply.status(200).send('Logout realizado com sucesso!')
   })
 }
