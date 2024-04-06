@@ -31,6 +31,4 @@ export async function usersRoutes(app: FastifyInstance) {
 
     return reply.status(201).send('Usuario cadastrado com sucesso!')
   })
-
-  // TODO: MÉTRICAS
 }
